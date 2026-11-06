@@ -10,8 +10,16 @@
     <header class="site-header">
         <h1><a href="/">Web Design Club</a></h1>
         <nav>
-            <a herf="/">Home</a>
+            <a href="/">Home</a>
+            <% if (user) { %>
+                <a href="/admin">Dashboard</a>
+            <a href="/admin">Dashboard</a>
+            <form action="/logout" method="POST" class="inline">
+                <button type="submit">Logout</button>
+            </form>
+            <% } else { %>
+                <a href="/login">Login</a>
+            <% } %>
         </nav>
     </header>
-    <main>
-</body>
+    </body>

@@ -1,4 +1,7 @@
 const express = require('express');
+const session = require('express-session');
+const bcypt = require('bcryptjs');
+
 const db= require('./db');
 
 const app = express();
@@ -7,12 +10,49 @@ const PORT = 3000;
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
+function requireLogin(req, res, next) {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+  next();
+}
+
 app.use(express.urlencoded({ extended: false }));
 app.use(session({
   secret:"hidden",
   resave: false,
   saveUninitialized: false
 }));
+
+app.get('/login', (req, res) => {
+  res.render('login', { error: null });
+});
+
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+
+  if (user && bcypt.compareSync(password, user.password_hash)) {
+    req.session.user = { id: user.id, username: user.username }; 
+   return res.redirect('/admin');
+  }
+
+  res.render('login', { error: 'Invalid username or password' });
+});
+
+app.get('/admin', requireLogin, (req, res) => {
+  res.send('<h1>Welcome, ' + req.session.user.username + '</h1>');
+});
+
+app.post('/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.redirect('/');
+  });
+});
+
+app.listen(PORT, () => {
+  console.log('Server is running on http://localhost:' + PORT);
+});
 
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
@@ -32,10 +72,3 @@ app.get('/post/:id', (req, res) => {
   res.render('post', { post });
 });
 
-
-
-
-
-app.listen(PORT, () => {
-  console.log('Server is running on http://localhost:' + PORT);
-});
