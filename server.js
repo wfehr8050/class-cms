@@ -7,6 +7,18 @@ const PORT = 3000;
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
+app.use(express.urlencoded({ extended: false }));
+app.use(session({
+  secret:"hidden",
+  resave: false,
+  saveUninitialized: false
+}));
+
+app.use((req, res, next) => {
+  res.locals.user = req.session.user || null;
+  next();
+});
+
 app.get('/', (req, res) => {
   const posts = db.prepare('SELECT * FROM posts ORDER BY id DESC').all();
   res.render('index', { posts });
