@@ -41,7 +41,18 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/admin', requireLogin, (req, res) => {
-  res.send('<h1>Welcome, ' + req.session.user.username + '</h1>');
+  const posts = db.prepare('SELECT * FROM posts ORDER BY id DESC').all();
+  res.render('dashboard', { posts });
+});
+
+app.get('/admin/new', requireLogin, (req, res) => {
+  res.render('edit', { post: null });
+});
+
+app.post('/admin/new', requireLogin, (req, res) => {
+  const { title, body } = req.body;
+  db.prepare('INSERT INTO posts (title, body) VALUES (?, ?)').run(title, body);
+  res.redirect('/admin');
 });
 
 app.post('/logout', (req, res) => {
