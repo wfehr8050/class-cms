@@ -24,6 +24,11 @@ app.use(session({
   saveUninitialized: false
 }));
 
+app.use((req, res, next) => {
+  res.locals.user = req.session.user || null;
+  next();
+});
+
 app.get('/login', (req, res) => {
   res.render('login', { error: null });
 });
@@ -47,6 +52,25 @@ app.get('/admin', requireLogin, (req, res) => {
 
 app.get('/admin/new', requireLogin, (req, res) => {
   res.render('edit', { post: null });
+});
+
+app.get('/admin/edit/:id', requireLogin, (req, res) => {
+  const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(req.params.id);
+  if (!post) {
+    return res.status(404).send('Post not found');
+  }
+  res.render('edit', { post });
+});
+
+app.post('/admin/edit/:id', requireLogin, (req, res) => {
+  const { title, body } = req.body;
+  db.prepare('UPDATE posts SET title = ?, body = ? WHERE id = ?').run(title, body, req.params.id);
+  res.redirect('/admin');
+});
+
+app.post('/admin/delete/:id', requireLogin, (req, res) => {
+  db.prepare('DELETE FROM posts WHERE id = ?').run(req.params.id);
+  res.redirect('/admin');
 });
 
 app.post('/admin/new', requireLogin, (req, res) => {
